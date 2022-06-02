@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -9,40 +10,66 @@ import (
 	"github.com/vilmibm/cyberbog/bogdb"
 )
 
-func _main(b *bogdb.BogDB, in io.Reader, out io.Writer) error {
-	// TODO do not assume something on STDIN
-	input, err := io.ReadAll(in)
-	if err != nil {
-		return fmt.Errorf("failed to read stdin: %w", err)
-	}
+type opts struct {
+	In    io.Reader
+	Out   io.Writer
+	Verb  string
+	BogDB *bogdb.BogDB
+}
 
-	if len(input) != 0 {
-		err = b.Inter(input)
+func _main(o opts) error {
+	if o.Verb == "inter" {
+		input, err := io.ReadAll(o.In)
 		if err != nil {
-			return fmt.Errorf("failed to inter: %w", err)
+			return fmt.Errorf("failed to read stdin: %w", err)
 		}
+
+		if len(input) != 0 {
+			err = o.BogDB.Inter(input)
+			if err != nil {
+				return fmt.Errorf("failed to inter: %w", err)
+			}
+		}
+
 		return nil
 	}
 
-	output, err := b.Exhume()
+	output, err := o.BogDB.Exhume()
 	if err != nil {
 		return fmt.Errorf("failed to exhume: %w", err)
 	}
 
-	fmt.Fprintln(out, output)
+	fmt.Fprintln(o.Out, string(output))
 
 	return nil
 }
 
 func main() {
-	// TODO take a rootpath arg
-	b, err := bogdb.NewBogDB("/tmp/bog", time.Now().UnixNano(), nil)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to make a bogdb: %s", err.Error())
+	pathFlag := flag.String("path", "/tmp/bog", "path to bog")
+
+	flag.Parse()
+
+	verbArg := flag.Arg(0)
+	if verbArg != "exhume" && verbArg != "inter" {
+		fmt.Fprintln(os.Stderr, "verb should be one of inter or exhume")
+		os.Exit(1)
 	}
 
-	err = _main(b, os.Stdin, os.Stdout)
+	b, err := bogdb.NewBogDB(*pathFlag, time.Now().UnixNano(), nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to make a bogdb: %s\n", err.Error())
+	}
+
+	o := opts{
+		In:    os.Stdin,
+		Out:   os.Stdout,
+		Verb:  verbArg,
+		BogDB: b,
+	}
+
+	err = _main(o)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, err.Error())
+		os.Exit(2)
 	}
 }
