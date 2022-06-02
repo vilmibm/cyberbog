@@ -48,7 +48,7 @@ func (b *BogDB) Inter(data []byte) error {
 			return fmt.Errorf("could not create '%s': %w", fragDir, err)
 		}
 
-		fragPath := path.Join(b.rootPath, fragDir, string(fragName))
+		fragPath := path.Join(fragDir, string(fragName))
 		f, err := os.Create(fragPath)
 		if err != nil {
 			return fmt.Errorf("failed to open fragment for writing '%s': %w", fragPath, err)
