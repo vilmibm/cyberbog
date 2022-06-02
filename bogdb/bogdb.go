@@ -42,7 +42,9 @@ func (b *BogDB) Inter(data []byte) error {
 	for _, fragment := range fragments {
 		now := b.now()
 		fragName := fmt.Sprintf("%d", b.rand.Uint64())
-		fragDir := path.Join(b.rootPath, string(fragName[0]), string(fragName[1]), string(fragName[2]))
+		fragDir := path.Join(
+			b.rootPath,
+			string(fragName[0]), string(fragName[1]), string(fragName[2]))
 		err = os.MkdirAll(fragDir, 0750)
 		if err != nil && !os.IsExist(err) {
 			return fmt.Errorf("could not create '%s': %w", fragDir, err)
