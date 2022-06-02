@@ -69,7 +69,46 @@ func (b *BogDB) Inter(data []byte) error {
 // Exhume reads a fragment from disk, further fragmenting and corroding it. One fragment is returned, the rest re-interred. Fragments are read, deleted from disk, then re-written as needed. This absolutely can lead to lost data; this is by design.
 func (b *BogDB) Exhume() ([]byte, error) {
 	// TODO
-	return nil, nil
+	dir := b.rootPath
+	deeper := true
+	var fragment []byte
+	for deeper {
+		var err error
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read dir '%s': %w", dir, err)
+		}
+		if len(entries) == 0 {
+			// TODO should this be error?
+			return []byte{}, nil
+		}
+		selected := b.rand.Intn(len(entries))
+		for ix, entry := range entries {
+			if ix != selected {
+				continue
+			}
+			absPath := path.Join(dir, entry.Name())
+			if entry.IsDir() {
+				dir = absPath
+				continue
+			}
+			fragment, err = os.ReadFile(absPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file '%s': %w", absPath, err)
+			}
+			deeper = false
+			err = os.Remove(absPath)
+			if err != nil {
+				return fragment, fmt.Errorf("failed to remove fragment '%s': %w", absPath, err)
+			}
+		}
+	}
+
+	// TODO should we fragment and put some pieces back in?
+
+	// TODO should we strip the date? I think no, that should be up to the caller of bogdb
+
+	return fragment, nil
 }
 
 func (b *BogDB) corrode(fragment []byte, intensity int64) []byte {
