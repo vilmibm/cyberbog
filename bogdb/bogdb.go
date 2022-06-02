@@ -78,6 +78,28 @@ func (b *BogDB) corrode(fragment []byte, intensity int64) []byte {
 }
 
 func (b *BogDB) fragment(fragment []byte) [][]byte {
-	// TODO
-	return [][]byte{fragment}
+	output := [][]byte{}
+	// TODO i want to divide fragment length by 10 but Go is being recalcitrant
+	splits := b.rand.Intn(len(fragment)) + 1
+
+	startIX := 0
+	endIX := 0
+	for split := 0; split < splits; split++ {
+		if startIX >= len(fragment) {
+			break
+		}
+		endIX += b.rand.Intn(len(fragment))
+		if endIX >= len(fragment) {
+			endIX = len(fragment)
+		}
+
+		newFrag := []byte{}
+		for ix := startIX; ix < endIX; ix++ {
+			newFrag = append(newFrag, fragment[ix])
+		}
+		startIX = endIX
+		output = append(output, newFrag)
+	}
+
+	return output
 }
