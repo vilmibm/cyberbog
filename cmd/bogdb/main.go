@@ -39,7 +39,7 @@ func _main(o opts) error {
 		return fmt.Errorf("failed to exhume: %w", err)
 	}
 
-	fmt.Fprintln(o.Out, string(output))
+	fmt.Fprintln(o.Out, string(output.Contents))
 
 	return nil
 }
